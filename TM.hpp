@@ -10,11 +10,23 @@ public:
   TM(std::string, std::string);
   ~TM();
   void readTM();
+  void runTapeFile();
 
 private:
   void readFirstLine(std::string);
-  void readTapeAlphabet(std::string);
+  void readInputAlphabet(std::string);
   void readTMStates(std::string);
+  void readStartRejectState(std::string);
+  void readTapeAlphabet(std::string);
+  void readTransition(std::string, int);
+  bool readTape(std::ifstream&);
+  void moveLeftOnTape();
+  void moveRightOnTape();
+  void writeOnTape(char);
+  bool inInputAlphabet(char);
+  bool inTMStates(std::string);
+  bool inTapeAlphabet(char);
+  void runSimulation();
 
 
 
@@ -22,12 +34,21 @@ private:
   std::string TapeFileName;
 
   std::string NameOfTM;
-  int NumberOfTapes;
-  int MaximumTapeLength;
-  int MaximumNumberOfSteps;
+  unsigned int NumberOfTapes;
+  unsigned int MaximumTapeLength;
+  unsigned int MaximumNumberOfSteps;
 
-  std::vector<char> TapeAlphabet;
+  std::vector<char> InputAlphabet;
   std::vector<std::string> TMStates;
+  std::string StartState;
+  std::string AcceptingState;
+  std::string RejectState;
+  std::vector<char> TapeAlphabet;
+  std::map<std::pair<std::string,char>,std::pair<std::string,int>> TransitionFunction;
+  std::vector<std::string> Rules;
+
+  std::string Tape;
+  unsigned int TapeIndex;
 
 
 
