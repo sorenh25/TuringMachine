@@ -16,5 +16,11 @@ runr: main
 runadd: main
 	TM-teamSorenHolm myMachines/TM-Addition.txt myMachines/Add-Accept.txt
 
+runda: main
+	TM-teamSorenHolm myMachines/TM-AddDecider.txt myMachines/Decider-Accept.txt
+
+rundr: main
+	TM-teamSorenHolm myMachines/TM-AddDecider.txt myMachines/Decider-Reject.txt
+
 clean:
 	rm TM-teamSorenHolm TM.o
