@@ -13,5 +13,8 @@ runa: main
 runr: main
 	TM-teamSorenHolm testFiles/TM1d.txt testFiles/TM1-reject.txt
 
+runadd: main
+	TM-teamSorenHolm myMachines/TM-Addition.txt myMachines/Add-Accept.txt
+
 clean:
 	rm TM-teamSorenHolm TM.o
