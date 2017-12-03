@@ -7,5 +7,11 @@ TM.o: TM.cpp TM.hpp
 run: main
 	TM-teamSorenHolm testFiles/TM1.txt testFiles/TM1-tape.txt
 
+runa: main
+	TM-teamSorenHolm testFiles/TM1d.txt testFiles/TM1-accept.txt
+
+runr: main
+	TM-teamSorenHolm testFiles/TM1d.txt testFiles/TM1-reject.txt
+
 clean:
 	rm TM-teamSorenHolm TM.o

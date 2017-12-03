@@ -9,11 +9,13 @@ class TM {
 public:
   TM(std::string, std::string);
   ~TM();
-  void readTM();
-  void runTapeFile();
+  void runTM();
 
 private:
-  void readFirstLine(std::string);
+  bool readTM();
+  void runTapeFile();
+
+  bool readFirstLine(std::string);
   void readInputAlphabet(std::string);
   void readTMStates(std::string);
   void readStartRejectState(std::string);
@@ -27,6 +29,7 @@ private:
   bool inTMStates(std::string);
   bool inTapeAlphabet(char);
   void runSimulation();
+
 
 
 
@@ -49,6 +52,9 @@ private:
 
   std::string Tape;
   unsigned int TapeIndex;
+  std::string CurrentState;
+  unsigned int SimulationSteps;
+  unsigned int TapeNumber;
 
 
 

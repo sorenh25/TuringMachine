@@ -16,7 +16,13 @@ TM::~TM() {
 
 }
 
-void TM::readTM() {
+void TM::runTM() {
+  if (readTM()) {
+    runTapeFile();
+  }
+}
+
+bool TM::readTM() {
   ifstream TMFile;
   TMFile.open(MachineFileName.c_str());
   if (!TMFile.is_open()) {
@@ -24,7 +30,9 @@ void TM::readTM() {
   }
   string line;
   getline(TMFile, line);
-  readFirstLine(line);
+  if (!readFirstLine(line)) {
+    return false;
+  }
 
   getline(TMFile, line);
   readInputAlphabet(line);
@@ -33,6 +41,9 @@ void TM::readTM() {
   readTMStates(line);
 
   getline(TMFile, StartState);
+  if (StartState[StartState.length() - 1] == '\r') {
+    StartState.pop_back();
+  }
 
   getline(TMFile, line);
   readStartRejectState(line);
@@ -48,12 +59,13 @@ void TM::readTM() {
   }
 
   TMFile.close();
+  return true;
 }
 
-void TM::readFirstLine(string line) {
-
-
-
+bool TM::readFirstLine(string line) {
+  if (line[line.length() - 1] == '\r') {
+    line.pop_back();
+  }
   size_t pos1 = 0;
   size_t pos2 = line.find_first_of(',',pos1);
   NameOfTM = line.substr(pos1, pos2);
@@ -63,6 +75,11 @@ void TM::readFirstLine(string line) {
   NumberOfTapes = atoi(line.substr(pos1,pos2 - pos1).c_str());
   pos1 = pos2 + 1;
 
+  if (NumberOfTapes != 1) {
+    cout << "This Turing Machine will only run with one tape" << endl;
+    return false;
+  }
+
   pos2 = line.find_first_of(',',pos1);
   MaximumTapeLength = atoi(line.substr(pos1,pos2 - pos1).c_str());
   pos1 = pos2 + 1;
@@ -70,8 +87,7 @@ void TM::readFirstLine(string line) {
   pos2 = line.find_first_of(',',pos1);
   MaximumNumberOfSteps = atoi(line.substr(pos1,pos2 - pos1).c_str());
 
-
-  //cout << NameOfTM << ' ' << NumberOfTapes << ' ' << MaximumTapeLength << ' ' << MaximumNumberOfSteps << endl;
+  return true;
 }
 
 void TM::readInputAlphabet(string line) {
@@ -226,11 +242,13 @@ bool TM::readTape(std::ifstream& TapeFile) {
   Tape.resize(MaximumTapeLength, '_');
   TapeIndex = 0;
 
+  /* this check they want done when the tape is simulated
   for (unsigned int i = 0; i < Tape.size(); i++) {
     if (!inTapeAlphabet(Tape[i])) {
       return false;
     }
   }
+  */
 
   return true;
 }
@@ -259,7 +277,7 @@ bool TM::inInputAlphabet(char input) {
       return true;
     }
   }
-  cout << input << " not in Input Alphabet" << endl;
+  //cout << input << " not in Input Alphabet" << endl;
   return false;
 }
 
@@ -269,7 +287,7 @@ bool TM::inTMStates(string state) {
       return true;
     }
   }
-  cout << state << " not in TM States" << endl;
+  //cout << state << " not in TM States" << endl;
   return false;
 }
 
@@ -280,7 +298,7 @@ bool TM::inTapeAlphabet(char character) {
     }
   }
   if (character != '_') {
-    cout << character << " not in Tape Alphabet" << endl;
+    //cout << character << " not in Tape Alphabet" << endl;
   }
   return false;
 }
@@ -291,11 +309,94 @@ void TM::runTapeFile() {
   if (!TapeFile.is_open()) {
     cerr << "Tape File could not be opened" << endl;
   }
+  TapeNumber = 0;
   while (readTape(TapeFile)) {
     runSimulation();
+    TapeNumber++;
   }
 }
 
 void TM::runSimulation() {
+  CurrentState = StartState;
+  SimulationSteps = 0;
+  pair<string, int> DestinationPair;
+  char Direction, NewCharacter;
+  string NewState;
+
+  cout << endl << "Tape " << '1' << ": " << Tape << endl;
+  cout << CurrentState << CurrentState.size() <<endl;
+
+  for (; SimulationSteps <= MaximumNumberOfSteps; SimulationSteps++) {
+
+    //Checks to see whether the input to be read from tape is in Tape Alphabet
+    if (!inTapeAlphabet(Tape[TapeIndex])) {
+      cout << "Error" << endl;
+      cout << "Tape " << '1' << ": " << Tape << endl << endl;
+      return;
+    }
+
+    //This block is functioning as the transition function for the current state and input or *
+    try {
+      //First try the transition function with the symbol on the tape.
+      DestinationPair = TransitionFunction.at(make_pair(CurrentState, Tape[TapeIndex]));
+    }
+    catch (const out_of_range& oor) {
+      try {//if that doesnt work there is maybe a rule with the * for the current state
+        DestinationPair = TransitionFunction.at(make_pair(CurrentState,'*'));
+      }
+      catch (const out_of_range& oor) {//if there is no such rule, then there is no transition available for the current configuration
+        cout << "Error" << endl;
+        //cout << CurrentState << ',' << Tape[TapeIndex] << endl;
+        cout << "Tape " << '1' << ": " << Tape << endl << endl;
+        return;
+      }
+    }
+
+    //Extracting the new state, new tape character and the direction from the transition function result
+    NewState = DestinationPair.first;
+    Direction = NewState.back();
+    NewState.pop_back();
+    NewCharacter = NewState.back();
+    NewState.pop_back();
+
+    cout << SimulationSteps << ',' << DestinationPair.second << ',' << TapeIndex << ',' << CurrentState << ',' << Tape[TapeIndex] << ',' << NewState << ',' << NewCharacter << ',' << Direction << endl;
+
+    if (NewState == RejectState) {
+      cout << "Reject" << endl;
+      cout << "Tape " << '1' << ": " << Tape << endl << endl;;
+      return;
+    }
+
+    if (NewState == AcceptingState) {
+      cout << "Accept" << endl;
+      cout << "Tape " << '1' << ": " << Tape << endl << endl;;
+      return;
+    }
+
+    //Updates the configuration of the Turing Machine
+    CurrentState = NewState;
+    writeOnTape(NewCharacter);
+
+    if (Direction == 'L') {
+      moveLeftOnTape();
+      continue;
+    }
+    if (Direction == 'R') {
+      moveRightOnTape();
+      continue;
+    }
+    if (Direction == 'S') {
+      continue;
+    }
+    else {
+      cout << "Not LRS" << endl;
+      //I should already have checked for this
+    }
+
+  }
+
+  cout << "Error (Exceeded max number of steps)" << endl;
+  cout << "Tape " << '1' << ": " << Tape << endl << endl;
+  return;
 
 }
